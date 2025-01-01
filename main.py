@@ -3,6 +3,7 @@ import discord
 import requests
 import os
 from dotenv import load_dotenv
+import threading
 
 load_dotenv()
 
@@ -85,7 +86,7 @@ def generate_response(prompt):
     
     # リクエストデータ
     data = {
-        "model": "gpt-4o-mini",  # 正しいモデル名に修正
+        "model": "gpt-4",  # 正しいモデル名に修正
         "messages": [
             {"role": "system", "content": system_prompt},  # システムプロンプト
             {"role": "user", "content": prompt}  # ユーザーの入力
@@ -128,12 +129,14 @@ async def on_message(message):
 
         return  # イベントの処理を終了
 
-# FlaskアプリとDiscord Botを同時に実行
-def run():
+# Discord Botを起動する関数
+def run_bot():
     client.run(os.getenv('DISCORD_BOT_TOKEN'))
 
 if __name__ == '__main__':
+    # Discord Botを別スレッドで起動
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.start()
+
     # Flaskアプリをポート3000で起動
     app.run(host='0.0.0.0', port=3000)
-    # Discord Botを起動
-    run()
