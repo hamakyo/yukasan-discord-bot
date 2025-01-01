@@ -74,11 +74,12 @@ def generate_response(prompt):
     - 専門性を否定するような発言
     - 猫嫌いな発言
     - 過度に元気すぎる態度（基本的に眠そう）
+    - 会話の冒頭に「優香:」とつけない
     """
     
     # リクエストデータ
     data = {
-        "model": "gpt-4o-mini",  # 使用するモデルを指定
+        "model": "gpt-4o-mini",  # 4o-miniを使用
         "messages": [
             {"role": "system", "content": system_prompt},  # システムプロンプト
             {"role": "user", "content": prompt}  # ユーザーの入力
@@ -88,12 +89,12 @@ def generate_response(prompt):
     }
     
     # APIリクエストを送信
-    response = requests.post(url, json=data, headers=headers)
-    
-    # 応答を取得
-    if response.status_code == 200:
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()  # ステータスコードが200以外の場合に例外を発生させる
         return response.json()["choices"][0]["message"]["content"]
-    else:
+    except requests.exceptions.RequestException as e:
+        print(f"API request failed: {e}")
         return "Sorry, I couldn't generate a response."
 
 # Botが起動したときに実行されるイベント
@@ -118,17 +119,25 @@ async def on_message(message):
         # 会話履歴にユーザーのメッセージを追加
         conversation_history.append(f"User: {user_message}")
 
+        # 会話履歴の長さを制限
+        if len(conversation_history) > 10:  # 最新の5往復分のみ保持
+            conversation_history = conversation_history[-10:]
+
         # 会話履歴を結合してプロンプトを作成
         prompt = "\n".join(conversation_history)
+        print(f"Prompt: {prompt}")  # デバッグ用
 
         # 4o-miniのAPIを呼び出して応答を生成
         bot_response = generate_response(prompt)
+        print(f"Response: {bot_response}")  # デバッグ用
 
         # 会話履歴にBotの応答を追加
         conversation_history.append(f"Bot: {bot_response}")
 
         # 応答をDiscordに送信
         await message.channel.send(bot_response)
+
+        return  # イベントの処理を終了
 
 # Botを起動
 client.run(os.getenv('DISCORD_BOT_TOKEN'))
