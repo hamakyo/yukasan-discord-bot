@@ -1,9 +1,18 @@
+from flask import Flask
 import discord
 import requests
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Flaskアプリを作成
+app = Flask(__name__)
+
+# ルートエンドポイント
+@app.route('/')
+def home():
+    return "Discord Bot is running!"
 
 # Discord Botのクライアントを作成
 intents = discord.Intents.default()
@@ -71,17 +80,17 @@ def generate_response(prompt):
     - 専門性を否定するような発言
     - 猫嫌いな発言
     - 過度に元気すぎる態度（基本的に眠そう）
-    - 会話の冒頭に「優香:」とつけない
+    - **会話の冒頭に「優香:」とつけない**
     """
     
     # リクエストデータ
     data = {
-        "model": "gpt-4",  # 正しいモデル名に修正
+        "model": "gpt-4o-mini",  # 正しいモデル名に修正
         "messages": [
             {"role": "system", "content": system_prompt},  # システムプロンプト
             {"role": "user", "content": prompt}  # ユーザーの入力
         ],
-        "max_tokens": 1000,
+        "max_tokens": 2000,
         "temperature": 0.8
     }
     
@@ -119,5 +128,12 @@ async def on_message(message):
 
         return  # イベントの処理を終了
 
-# Botを起動
-client.run(os.getenv('DISCORD_BOT_TOKEN'))
+# FlaskアプリとDiscord Botを同時に実行
+def run():
+    client.run(os.getenv('DISCORD_BOT_TOKEN'))
+
+if __name__ == '__main__':
+    # Flaskアプリをポート3000で起動
+    app.run(host='0.0.0.0', port=3000)
+    # Discord Botを起動
+    run()
