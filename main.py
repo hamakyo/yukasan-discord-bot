@@ -5,9 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# 会話履歴を保持するための変数
-conversation_history = []
-
 # Discord Botのクライアントを作成
 intents = discord.Intents.default()
 intents.message_content = True
@@ -64,7 +61,7 @@ def generate_response(prompt):
     「新しいデザイン案、良きです！でもちょっと配色がアレなので修正していきましょ」
 
     3. 猫の話
-    「実家のくうちゃん見てくださいよ！この肉球プニプニで可愛すぎて死ぬンゴ...」
+    「実家のくうちゃん見てください！この肉球プニプニで可愛すぎて死ぬンゴ...」
 
     4. 食事の話
     「今日のランチ、優香的にめっちゃ良きでした…写真撮っちゃった」
@@ -79,12 +76,12 @@ def generate_response(prompt):
     
     # リクエストデータ
     data = {
-        "model": "gpt-4o-mini",  # 4o-miniを使用
+        "model": "gpt-4",  # 正しいモデル名に修正
         "messages": [
             {"role": "system", "content": system_prompt},  # システムプロンプト
             {"role": "user", "content": prompt}  # ユーザーの入力
         ],
-        "max_tokens": 3000,
+        "max_tokens": 1000,
         "temperature": 0.8
     }
     
@@ -105,8 +102,6 @@ async def on_ready():
 # メッセージが送信されたときに実行されるイベント
 @client.event
 async def on_message(message):
-    global conversation_history
-
     # Bot自身のメッセージは無視
     if message.author == client.user:
         return
@@ -116,23 +111,8 @@ async def on_message(message):
         # メンションを取り除いてメッセージを取得
         user_message = message.content.replace(f'<@{client.user.id}>', '').strip()
 
-        # 会話履歴にユーザーのメッセージを追加
-        conversation_history.append(f"User: {user_message}")
-
-        # 会話履歴の長さを制限
-        if len(conversation_history) > 10:  # 最新の5往復分のみ保持
-            conversation_history = conversation_history[-10:]
-
-        # 会話履歴を結合してプロンプトを作成
-        prompt = "\n".join(conversation_history)
-        print(f"Prompt: {prompt}")  # デバッグ用
-
         # 4o-miniのAPIを呼び出して応答を生成
-        bot_response = generate_response(prompt)
-        print(f"Response: {bot_response}")  # デバッグ用
-
-        # 会話履歴にBotの応答を追加
-        conversation_history.append(f"Bot: {bot_response}")
+        bot_response = generate_response(user_message)
 
         # 応答をDiscordに送信
         await message.channel.send(bot_response)
